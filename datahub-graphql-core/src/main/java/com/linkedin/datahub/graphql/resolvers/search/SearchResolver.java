@@ -19,7 +19,7 @@ import com.linkedin.metadata.query.GroupingSpec;
 import com.linkedin.metadata.query.SearchFlags;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import io.opentelemetry.extension.annotations.WithSpan;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -86,10 +86,7 @@ public class SearchResolver implements DataFetcher<CompletableFuture<SearchResul
                     context.getOperationContext().withSearchFlags(flags -> searchFlags),
                     entityName,
                     sanitizedQuery,
-                    ResolverUtils.buildFilter(
-                        input.getFilters(),
-                        input.getOrFilters(),
-                        context.getOperationContext().getAspectRetriever()),
+                    ResolverUtils.buildFilter(input.getFilters(), input.getOrFilters()),
                     Collections.emptyList(),
                     start,
                     count));

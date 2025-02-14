@@ -4,12 +4,13 @@ import com.linkedin.common.urn.Urn;
 import com.linkedin.data.schema.validation.ValidationResult;
 import com.linkedin.data.template.RecordTemplate;
 import com.linkedin.metadata.aspect.AspectRetriever;
-import com.linkedin.metadata.entity.EntityApiUtils;
 import com.linkedin.metadata.models.AspectSpec;
 import com.linkedin.metadata.models.EntitySpec;
 import com.linkedin.metadata.models.registry.EntityRegistry;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
+import com.linkedin.metadata.utils.EntityApiUtils;
+import com.linkedin.metadata.utils.EntityRegistryUrnValidator;
+import com.linkedin.metadata.utils.RecordTemplateValidator;
+import com.linkedin.metadata.utils.UrnValidationUtil;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -17,8 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ValidationApiUtils {
-  public static final int URN_NUM_BYTES_LIMIT = 512;
-  public static final String URN_DELIMITER_SEPARATOR = "␟";
+  public static final String STRICT_URN_VALIDATION_ENABLED = "STRICT_URN_VALIDATION_ENABLED";
 
   /**
    * Validates a {@link RecordTemplate} and throws {@link ValidationException} if validation fails.
@@ -37,35 +37,12 @@ public class ValidationApiUtils {
   }
 
   public static void validateUrn(@Nonnull EntityRegistry entityRegistry, @Nonnull final Urn urn) {
-    EntityRegistryUrnValidator validator = new EntityRegistryUrnValidator(entityRegistry);
-    validator.setCurrentEntitySpec(entityRegistry.getEntitySpec(urn.getEntityType()));
-    RecordTemplateValidator.validate(
-        EntityApiUtils.buildKeyAspect(entityRegistry, urn),
-        validationResult -> {
-          throw new IllegalArgumentException(
-              "Invalid urn: " + urn + "\n Cause: " + validationResult.getMessages());
-        },
-        validator);
-
-    if (urn.toString().trim().length() != urn.toString().length()) {
-      throw new IllegalArgumentException(
-          "Error: cannot provide an URN with leading or trailing whitespace");
-    }
-    if (URLEncoder.encode(urn.toString()).length() > URN_NUM_BYTES_LIMIT) {
-      throw new IllegalArgumentException(
-          "Error: cannot provide an URN longer than "
-              + Integer.toString(URN_NUM_BYTES_LIMIT)
-              + " bytes (when URL encoded)");
-    }
-    if (urn.toString().contains(URN_DELIMITER_SEPARATOR)) {
-      throw new IllegalArgumentException(
-          "Error: URN cannot contain " + URN_DELIMITER_SEPARATOR + " character");
-    }
-    try {
-      Urn.createFromString(urn.toString());
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException(e);
-    }
+    UrnValidationUtil.validateUrn(
+        entityRegistry,
+        urn,
+        Boolean.TRUE.equals(
+            Boolean.parseBoolean(
+                System.getenv().getOrDefault(STRICT_URN_VALIDATION_ENABLED, "false"))));
   }
 
   /**
@@ -107,7 +84,7 @@ public class ValidationApiUtils {
     validator.setCurrentEntitySpec(entitySpec);
     Consumer<ValidationResult> resultFunction =
         validationResult -> {
-          throw new IllegalArgumentException(
+          throw new ValidationException(
               "Invalid format for aspect: "
                   + entitySpec.getName()
                   + "\n Cause: "

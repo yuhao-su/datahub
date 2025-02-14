@@ -53,9 +53,9 @@ class AddDatasetDataProduct(DatasetDataproductTransformer):
         data_products: Dict[str, DataProductPatchBuilder] = {}
         data_products_container: Dict[str, DataProductPatchBuilder] = {}
         logger.debug("Generating dataproducts")
+        is_container = self.config.is_container
         for entity_urn in self.entity_map.keys():
             data_product_urn = self.config.get_data_product_to_add(entity_urn)
-            is_container = self.config.is_container
             if data_product_urn:
                 if data_product_urn not in data_products:
                     data_products[data_product_urn] = DataProductPatchBuilder(
@@ -80,10 +80,10 @@ class AddDatasetDataProduct(DatasetDataproductTransformer):
                         ).add_asset(container_urn)
                         data_products_container[data_product_urn] = container_product
                     else:
-                        data_products_container[
-                            data_product_urn
-                        ] = data_products_container[data_product_urn].add_asset(
-                            container_urn
+                        data_products_container[data_product_urn] = (
+                            data_products_container[data_product_urn].add_asset(
+                                container_urn
+                            )
                         )
 
         mcps: List[
@@ -105,7 +105,6 @@ class SimpleAddDatasetDataProduct(AddDatasetDataProduct):
     """Transformer that adds a specified dataproduct entity for provided dataset as its asset."""
 
     def __init__(self, config: SimpleDatasetDataProductConfig, ctx: PipelineContext):
-
         generic_config = AddDatasetDataProductConfig(
             get_data_product_to_add=lambda dataset_urn: config.dataset_to_data_product_urns.get(
                 dataset_urn
@@ -144,11 +143,11 @@ class PatternAddDatasetDataProduct(AddDatasetDataProduct):
     def __init__(self, config: PatternDatasetDataProductConfig, ctx: PipelineContext):
         dataset_to_data_product = config.dataset_to_data_product_urns_pattern
         generic_config = AddDatasetDataProductConfig(
-            get_data_product_to_add=lambda dataset_urn: dataset_to_data_product.value(
-                dataset_urn
-            )[0]
-            if dataset_to_data_product.value(dataset_urn)
-            else None,
+            get_data_product_to_add=lambda dataset_urn: (
+                dataset_to_data_product.value(dataset_urn)[0]
+                if dataset_to_data_product.value(dataset_urn)
+                else None
+            ),
             is_container=config.is_container,
         )
         super().__init__(generic_config, ctx)

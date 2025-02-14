@@ -4,13 +4,14 @@ import pathlib
 import setuptools
 
 package_metadata: dict = {}
-with open("./src/prefect_datahub/__init__.py") as fp:
+with open("./src/prefect_datahub/_version.py") as fp:
     exec(fp.read(), package_metadata)
 
 
 def get_long_description():
     root = os.path.dirname(__file__)
     return pathlib.Path(os.path.join(root, "README.md")).read_text()
+
 
 _version: str = package_metadata["__version__"]
 _self_pin = (
@@ -26,11 +27,10 @@ base_requirements = {
     # For python 3.7 and importlib-metadata>=5.0.0, build failed with attribute error
     "importlib-metadata>=4.4.0,<5.0.0; python_version < '3.8'",
     # Actual dependencies.
-    "prefect >= 2.0.0",
+    # Temporary pinning to 2.0.0 until we can upgrade to 3.0.0
+    "prefect >= 2.0.0,<3.0.0",
     *rest_common,
-    # Ignoring the dependency below because it causes issues with the vercel built wheel install
-    # f"acryl-datahub[datahub-rest]{_self_pin}",
-    "acryl-datahub[datahub-rest]",
+    f"acryl-datahub[datahub-rest]{_self_pin}",
 }
 
 
@@ -55,11 +55,8 @@ mypy_stubs = {
 dev_requirements = {
     *base_requirements,
     *mypy_stubs,
-    "black==22.12.0",
     "coverage>=5.1",
-    "flake8>=3.8.3",
-    "flake8-tidy-imports>=4.3.0",
-    "isort>=5.7.0",
+    "ruff==0.9.2",
     "mypy>=1.4.0",
     # pydantic 1.8.2 is incompatible with mypy 0.910.
     # See https://github.com/samuelcolvin/pydantic/pull/3175#issuecomment-995382910.
@@ -101,10 +98,6 @@ setuptools.setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
         "Intended Audience :: System Administrators",
@@ -118,7 +111,7 @@ setuptools.setup(
     ],
     # Package info.
     zip_safe=False,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     package_dir={"": "src"},
     packages=setuptools.find_namespace_packages(where="./src"),
     entry_points=entry_points,

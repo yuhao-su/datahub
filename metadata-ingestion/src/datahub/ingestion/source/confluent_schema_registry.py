@@ -16,8 +16,10 @@ from confluent_kafka.schema_registry.schema_registry_client import (
 from datahub.ingestion.extractor import protobuf_util, schema_util
 from datahub.ingestion.extractor.json_schema_util import JsonSchemaTranslator
 from datahub.ingestion.extractor.protobuf_util import ProtobufSchema
-from datahub.ingestion.source.kafka import KafkaSourceConfig, KafkaSourceReport
-from datahub.ingestion.source.kafka_schema_registry_base import KafkaSchemaRegistryBase
+from datahub.ingestion.source.kafka.kafka import KafkaSourceConfig, KafkaSourceReport
+from datahub.ingestion.source.kafka.kafka_schema_registry_base import (
+    KafkaSchemaRegistryBase,
+)
 from datahub.metadata.com.linkedin.pegasus2avro.schema import (
     KafkaSchema,
     SchemaField,
@@ -260,9 +262,9 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
                 self.report.warning(
                     title="Failed to get subject schema from schema registry",
                     message=f"Failed to get {kafka_entity} {schema_type_str or ''} schema from schema registry",
-                    context=f"{topic}: {topic_subject}"
-                    if not is_subject
-                    else topic_subject,
+                    context=(
+                        f"{topic}: {topic_subject}" if not is_subject else topic_subject
+                    ),
                     exc=e,
                 )
         else:
@@ -291,9 +293,9 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
     def _load_json_schema_with_resolved_references(
         self, schema: Schema, name: str, subject: str
     ) -> dict:
-        imported_json_schemas: List[
-            JsonSchemaWrapper
-        ] = self.get_schemas_from_confluent_ref_json(schema, name=name, subject=subject)
+        imported_json_schemas: List[JsonSchemaWrapper] = (
+            self.get_schemas_from_confluent_ref_json(schema, name=name, subject=subject)
+        )
         schema_dict = json.loads(schema.schema_str)
         reference_map = {}
         for imported_schema in imported_json_schemas:
@@ -320,23 +322,27 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
             fields = schema_util.avro_schema_to_mce_fields(
                 avro_schema,
                 is_key_schema=is_key_schema,
-                meta_mapping_processor=self.field_meta_processor
-                if self.source_config.enable_meta_mapping
-                else None,
+                meta_mapping_processor=(
+                    self.field_meta_processor
+                    if self.source_config.enable_meta_mapping
+                    else None
+                ),
                 schema_tags_field=self.source_config.schema_tags_field,
                 tag_prefix=self.source_config.tag_prefix,
             )
 
         elif schema.schema_type == "PROTOBUF":
-            imported_schemas: List[
-                ProtobufSchema
-            ] = self.get_schemas_from_confluent_ref_protobuf(schema)
+            imported_schemas: List[ProtobufSchema] = (
+                self.get_schemas_from_confluent_ref_protobuf(schema)
+            )
             base_name: str = topic.replace(".", "_")
             fields = protobuf_util.protobuf_schema_to_mce_fields(
                 ProtobufSchema(
-                    f"{base_name}-key.proto"
-                    if is_key_schema
-                    else f"{base_name}-value.proto",
+                    (
+                        f"{base_name}-key.proto"
+                        if is_key_schema
+                        else f"{base_name}-value.proto"
+                    ),
                     schema.schema_str,
                 ),
                 imported_schemas,
@@ -367,7 +373,6 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
     def _get_schema_metadata(
         self, topic: str, platform_urn: str, is_subject: bool
     ) -> Optional[SchemaMetadata]:
-
         # Process the value schema
         schema, fields = self._get_schema_and_fields(
             topic=topic,

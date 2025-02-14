@@ -1,4 +1,4 @@
-const number = Math.floor(Math.random() * 100000);
+const number = crypto.getRandomValues(new Uint32Array(1))[0];
 const accound_id = `account${number}`;
 const warehouse_id = `warehouse${number}`;
 const username = `user${number}`;
@@ -65,7 +65,9 @@ describe("ingestion source creation flow", () => {
     cy.waitTextVisible(`${ingestion_source_name} EDITED`);
 
     // Remove ingestion source
-    cy.get('[data-testid="delete-button"]').first().click();
+    cy.get(
+      `[data-testid="delete-ingestion-source-${ingestion_source_name} EDITED"]`,
+    ).click();
     cy.waitTextVisible("Confirm Ingestion Source Removal");
     cy.get("button").contains("Yes").click();
     cy.waitTextVisible("Removed ingestion source.");

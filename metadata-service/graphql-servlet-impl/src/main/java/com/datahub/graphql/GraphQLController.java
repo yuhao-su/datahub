@@ -15,6 +15,7 @@ import com.google.inject.name.Named;
 import com.linkedin.datahub.graphql.GraphQLEngine;
 import com.linkedin.datahub.graphql.concurrency.GraphQLConcurrencyUtils;
 import com.linkedin.datahub.graphql.exception.DataHubGraphQLError;
+import com.linkedin.gms.factory.config.ConfigurationProvider;
 import com.linkedin.metadata.utils.metrics.MetricUtils;
 import graphql.ExecutionResult;
 import io.datahubproject.metadata.context.OperationContext;
@@ -36,10 +37,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
+@RequestMapping("/api")
 public class GraphQLController {
 
   public GraphQLController() {
@@ -50,6 +53,8 @@ public class GraphQLController {
   @Inject GraphQLEngine _engine;
 
   @Inject AuthorizerChain _authorizerChain;
+
+  @Inject ConfigurationProvider configurationProvider;
 
   @Nonnull
   @Inject
@@ -122,6 +127,7 @@ public class GraphQLController {
             authentication,
             _authorizerChain,
             systemOperationContext,
+            configurationProvider,
             request,
             operationName,
             query,
